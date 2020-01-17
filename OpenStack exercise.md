@@ -24,7 +24,7 @@ COMPUTE_NODES=10.0.0.200,10.0.0.201
 
 
 
-## controller 설치 
+### controller 설치 
 
 - VMware workstation에서 `contoller-base-10.0.0.100.vmdk`와 `CentOS-7-x86_64-DVD-1611.iso`를 사용하여 설치
 
