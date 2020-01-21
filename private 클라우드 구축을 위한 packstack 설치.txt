@@ -1,0 +1,122 @@
+private cloud
+
+
+vm workstation controllerex설치
+	vi /etc/sysconfig/network-scripts/ifcfg-ens33에서 
+	IPADDR변경
+ 
+systemctl restart network // 네트워크 재시작
+
+xshell접속
+
+hostnamectl set-hostname controllerex // 호스트 이름 변경
+
+hosts수정
+	vi /etc/hosts에서 
+	10.0.0.200 controllerex
+	10.0.0.201 computeex   
+
+----------------------------------------------------------- 
+vm workstation computeex설치
+	vi /etc/sysconfig/network-scripts/ifcfg-ens33에서 
+	IPADDR변경
+ 
+systemctl restart network // 네트워크 재시작
+
+xshell접속
+
+hostnamectl set-hostname controllerex // 호스트 이름 변경
+
+hosts수정
+	vi /etc/hosts에서 
+	10.0.0.200 controllerex
+	10.0.0.201 computeex   
+--------------------------------------------------------------
+
+yum update 
+
+yum install centos-release-openstack-rocky //오픈스택 rocky설치를 위한 패키지 설치
+
+yum install openstack-packstack -y //packstack 패키지 설치
+
+rpm -qa|grep openstack // 오픈스택 패키지 정보확인
+
+systemctl disable firewalld
+systemctl stop firewalld
+setenforce 0
+systemctl disable NetworkManager
+systemctl stop NetworkManager
+systemctl enable network
+systemctl start network
+
+answerfile.txt 수정
+packstack --gen-answer-file=/root/answerfile.txt
+vim answerfile.txt
+아래 설정으로 수정
+CONFIG_DEFAULT_PASSWORD=abc123
+CONFIG_CEILOMETER_INSTALL=n
+CONFIG_AODH_INSTALL=n 
+CONFIG_KEYSTONE_ADMIN_PW=abc123
+CONFIG_HEAT_INSTALL=y 
+CONFIG_MAGNUM_INSTALL=y 
+CONFIG_TROVE_INSTALL=y
+CONFIG_NEUTRON_L2_AGENT=openvswitch 
+CONFIG_NEUTRON_OVS_BRIDGE_IFACES=br-ex:ens33
+CONFIG_COMPUTE_HOSTS=10.0.0.200,10.0.0.201
+
+Answerfile.txt를 이용하여 packstack 설치
+packstack --answer-file=/root/answerfile.txt
+
+
+--------------------------------------------------------------
+version: "3"
+
+services:
+  master:
+    image: registry:5000/ch04/tododb:latest
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role != manager]
+    environment:
+      MYSQL_ROOT_PASSWORD: gihyo 
+      MYSQL_DATABASE: tododb 
+      MYSQL_USER: gihyo 
+      MYSQL_PASSWORD: gihyo 
+      MYSQL_MASTER: "true"
+    networks:
+      - todoapp
+
+  slave:
+    image: registry:5000/ch04/tododb:latest
+    deploy:
+      replicas: 2
+      placement:
+        constraints: [node.role != manager]
+    depends_on:
+      - master
+    environment:
+      MYSQL_MASTER_HOST: master
+      MYSQL_ROOT_PASSWORD: gihyo 
+      MYSQL_DATABASE: tododb 
+      MYSQL_USER: gihyo 
+      MYSQL_PASSWORD: gihyo 
+      MYSQL_ROOT_PASSWORD: gihyo 
+      MYSQL_REPL_USER: repl 
+      MYSQL_REPL_PASSWORD: gihyo 
+    networks:
+      - todoapp
+
+networks:
+  todoapp:
+    external: true
+
+
+
+
+
+
+
+
+
+
